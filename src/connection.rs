@@ -36,10 +36,10 @@ pub struct Connection {
     pub conn_type: ConnectionType,
     pub hash_data: HashData,
     state: ConnectionState,
-    key_exchange: Option<Box<KeyExchange>>,
+    key_exchange: Option<Box<dyn KeyExchange>>,
     session_id: Option<Vec<u8>>,
-    encryption: Option<(Box<Encryption>, Box<Encryption>)>,
-    mac: Option<(Box<MacAlgorithm>, Box<MacAlgorithm>)>,
+    encryption: Option<(Box<dyn Encryption>, Box<dyn Encryption>)>,
+    mac: Option<(Box<dyn MacAlgorithm>, Box<dyn MacAlgorithm>)>,
     seq: (u32, u32),
     tx_queue: VecDeque<Packet>,
     channels: BTreeMap<ChannelId, Channel>,
@@ -85,7 +85,7 @@ impl<'a> Connection {
         }
     }
 
-    fn recv(&mut self, mut stream: &mut Read) -> Result<Packet> {
+    fn recv(&mut self, mut stream: &mut dyn Read) -> Result<Packet> {
         let packet = if let Some((ref mut c2s, _)) = self.encryption {
             let mut decryptor = Decryptor::new(&mut **c2s, &mut stream);
             Packet::read_from(&mut decryptor)?
@@ -114,7 +114,7 @@ impl<'a> Connection {
         Ok(packet)
     }
 
-    fn send(&mut self, mut stream: &mut Write, packet: Packet)
+    fn send(&mut self, mut stream: &mut dyn Write, packet: Packet)
         -> io::Result<()> {
         debug!("Sending packet {}: {:?}", self.seq.1, packet);
 
@@ -142,7 +142,7 @@ impl<'a> Connection {
         Ok(())
     }
 
-    fn send_id(&mut self, stream: &mut Write) -> io::Result<()> {
+    fn send_id(&mut self, stream: &mut dyn Write) -> io::Result<()> {
         let id = format!("SSH-2.0-RedoxSSH_{}", env!("CARGO_PKG_VERSION"));
         info!("Identifying as {:?}", id);
 
@@ -155,7 +155,7 @@ impl<'a> Connection {
         Ok(())
     }
 
-    fn read_id(&mut self, stream: &mut Read) -> io::Result<()> {
+    fn read_id(&mut self, stream: &mut dyn Read) -> io::Result<()> {
         use std::str;
 
         let mut buf = [0; 255];

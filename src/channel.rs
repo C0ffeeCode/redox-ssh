@@ -143,7 +143,7 @@ impl Channel {
                         .stdin(unsafe { Stdio::from_raw_fd(stdin) })
                         .stdout(unsafe { Stdio::from_raw_fd(stdout) })
                         .stderr(unsafe { Stdio::from_raw_fd(stderr) })
-                        .before_exec(|| sys::before_exec())
+                        .before_exec(|| sys::before_exec()) // TODO: listen to compiler warning
                         .spawn()
                         .unwrap();
                 }

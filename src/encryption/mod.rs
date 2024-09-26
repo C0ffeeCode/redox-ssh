@@ -10,12 +10,12 @@ pub trait Encryption {
 }
 
 pub struct Decryptor<'a> {
-    encryption: &'a mut Encryption,
-    stream: &'a mut Read,
+    encryption: &'a mut dyn Encryption,
+    stream: &'a mut dyn Read,
 }
 
 impl<'a> Decryptor<'a> {
-    pub fn new(encryption: &'a mut Encryption, stream: &'a mut Read)
+    pub fn new(encryption: &'a mut dyn Encryption, stream: &'a mut dyn Read)
         -> Decryptor<'a> {
         Decryptor {
             encryption: encryption,

@@ -9,7 +9,7 @@ use public_key::KeyPair;
 pub struct ServerConfig {
     pub host: String,
     pub port: u16,
-    pub key: Box<KeyPair>,
+    pub key: Box<dyn KeyPair>,
 }
 
 pub struct Server {
