@@ -3,8 +3,8 @@ use std::net::TcpListener;
 use std::sync::Arc;
 use std::thread;
 
-use connection::{Connection, ConnectionType};
-use public_key::KeyPair;
+use crate::connection::{Connection, ConnectionType};
+use crate::public_key::KeyPair;
 
 pub struct ServerConfig {
     pub host: String,

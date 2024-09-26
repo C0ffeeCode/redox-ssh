@@ -2,8 +2,9 @@ use std::io::{self, Read, Write};
 use std::io::ErrorKind::InvalidData;
 
 use crypto::ed25519;
-use public_key::{CryptoSystem, KeyPair};
-use rand::{Rng, RngCore};
+use rand::RngCore;
+
+use crate::public_key::{CryptoSystem, KeyPair};
 
 pub static ED25519: CryptoSystem = CryptoSystem {
     id: "ed25519",
@@ -31,7 +32,7 @@ impl Ed25519KeyPair {
     }
 
     fn import(mut r: &mut dyn Read) -> io::Result<Box<dyn KeyPair>> {
-        use packet::ReadPacketExt;
+        use crate::packet::ReadPacketExt;
 
         if r.read_utf8()? != "ssh-ed25519" {
             return Err(io::Error::new(InvalidData, "not a ED25519 key"));
@@ -58,7 +59,7 @@ impl Ed25519KeyPair {
     }
 
     fn read_public(mut r: &mut dyn Read) -> io::Result<Box<dyn KeyPair>> {
-        use packet::ReadPacketExt;
+        use crate::packet::ReadPacketExt;
 
         if r.read_uint32()? != 32 {
             return Err(io::Error::new(InvalidData, "invalid ED25519 key"));
@@ -84,7 +85,7 @@ impl KeyPair for Ed25519KeyPair {
     }
 
     fn verify(&self, data: &[u8], signature: &[u8]) -> Result<bool, ()> {
-        use packet::ReadPacketExt;
+        use crate::packet::ReadPacketExt;
         use std::io::Cursor;
 
         let mut reader = Cursor::new(signature);
@@ -99,7 +100,7 @@ impl KeyPair for Ed25519KeyPair {
     }
 
     fn sign(&self, data: &[u8]) -> Result<Vec<u8>, ()> {
-        use packet::WritePacketExt;
+        use crate::packet::WritePacketExt;
         if let Some(private_key) = self.private {
             let mut result = Vec::new();
             let sig = ed25519::signature(data, &private_key);
@@ -113,13 +114,13 @@ impl KeyPair for Ed25519KeyPair {
     }
 
     fn write_public(&self, w: &mut dyn Write) -> io::Result<()> {
-        use packet::WritePacketExt;
+        use crate::packet::WritePacketExt;
         w.write_string("ssh-ed25519")?;
         w.write_bytes(&self.public)
     }
 
     fn export(&self, w: &mut dyn Write) -> io::Result<()> {
-        use packet::WritePacketExt;
+        use crate::packet::WritePacketExt;
         w.write_string("ssh-ed25519")?;
         w.write_bytes(&self.public)?;
         if let Some(private_key) = self.private {

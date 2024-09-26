@@ -1,12 +1,13 @@
-use connection::{Connection, ConnectionType};
 use crypto::curve25519;
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
-use key_exchange::{KexResult, KeyExchange};
-use message::MessageType;
 use num_bigint::{BigInt, Sign};
-use packet::{Packet, ReadPacketExt, WritePacketExt};
 use rand::RngCore;
+
+use crate::connection::{Connection, ConnectionType};
+use crate::key_exchange::{KexResult, KeyExchange};
+use crate::message::MessageType;
+use crate::packet::{Packet, ReadPacketExt, WritePacketExt};
 
 const ECDH_KEX_INIT: u8 = 30;
 const ECDH_KEX_REPLY: u8 = 31;

@@ -3,9 +3,9 @@ use std::io::{self, BufReader, Read, Result, Write};
 use std::str::{self, FromStr};
 
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-
-use message::MessageType;
 use num_bigint::BigInt;
+
+use crate::message::MessageType;
 
 pub enum Packet {
     Raw(Vec<u8>, usize),

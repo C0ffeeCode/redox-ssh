@@ -1,8 +1,8 @@
 use std::fmt;
 use std::str::FromStr;
 
-use error::{ConnectionError, ConnectionResult};
-use key_exchange::{self, KeyExchange};
+use crate::error::{ConnectionError, ConnectionResult};
+use crate::key_exchange::{self, KeyExchange};
 
 /// Slice of implemented key exchange algorithms, ordered by preference
 pub static KEY_EXCHANGE: &[KeyExchangeAlgorithm] =

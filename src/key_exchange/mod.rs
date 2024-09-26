@@ -4,8 +4,8 @@ mod curve25519;
 pub use self::curve25519::Curve25519;
 // pub use self::dh_group_sha1::DhGroupSha1;
 
-use connection::Connection;
-use packet::Packet;
+use crate::connection::Connection;
+use crate::packet::Packet;
 
 pub enum KexResult {
     Ok(Packet),

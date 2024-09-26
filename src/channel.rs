@@ -5,7 +5,8 @@ use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{self, Stdio};
 use std::thread::{self, JoinHandle};
-use sys;
+
+use crate::sys;
 
 pub type ChannelId = u32;
 

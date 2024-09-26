@@ -2,15 +2,16 @@ use std::collections::{BTreeMap, VecDeque};
 use std::io::{self, BufReader, Read, Write};
 use std::sync::Arc;
 
-use channel::{Channel, ChannelId, ChannelRequest};
-use encryption::{AesCtr, Decryptor, Encryption};
-use error::{ConnectionError, ConnectionResult as Result};
-use key_exchange::{KexResult, KeyExchange};
-use mac::{Hmac, MacAlgorithm};
-use message::MessageType;
-use packet::{Packet, ReadPacketExt, WritePacketExt};
 use rand::distributions::Standard;
-use server::ServerConfig;
+
+use crate::channel::{Channel, ChannelId, ChannelRequest};
+use crate::encryption::{AesCtr, Decryptor, Encryption};
+use crate::error::{ConnectionError, ConnectionResult as Result};
+use crate::key_exchange::{KexResult, KeyExchange};
+use crate::mac::{Hmac, MacAlgorithm};
+use crate::message::MessageType;
+use crate::packet::{Packet, ReadPacketExt, WritePacketExt};
+use crate::server::ServerConfig;
 
 #[derive(PartialEq)]
 enum ConnectionState {
@@ -364,7 +365,7 @@ impl<'a> Connection {
     }
 
     fn kex_init(&mut self, packet: Packet) -> Result<Option<Packet>> {
-        use algorithm::*;
+        use crate::algorithm::*;
 
         let (kex_algo, srv_host_key_algo, enc_algo, mac_algo, comp_algo) = {
             let mut reader = packet.reader();

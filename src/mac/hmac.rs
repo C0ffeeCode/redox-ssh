@@ -1,7 +1,8 @@
 use crypto::hmac::Hmac as rcHmac;
 use crypto::mac::Mac;
 use crypto::sha2::Sha256;
-use mac::MacAlgorithm;
+
+use crate::mac::MacAlgorithm;
 
 pub struct Hmac {
     hmac: Box<rcHmac<Sha256>>,
