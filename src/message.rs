@@ -69,10 +69,10 @@ impl From<u8> for MessageType {
     }
 }
 
-impl Into<u8> for MessageType {
-    fn into(self) -> u8 {
+impl From<MessageType> for u8 {
+    fn from(val: MessageType) -> Self {
         use self::MessageType::*;
-        match self
+        match val
         {
             Disconnect => 1,
             Ignore => 2,

@@ -42,14 +42,14 @@ impl Channel {
         max_packet_size: u32
     ) -> Channel {
         Channel {
-            id: id,
-            peer_id: peer_id,
+            id,
+            peer_id,
             process: None,
             master: None,
             pty: None,
             window_size: peer_window_size,
-            peer_window_size: peer_window_size,
-            max_packet_size: max_packet_size,
+            peer_window_size,
+            max_packet_size,
             read_thread: None,
         }
     }
@@ -118,25 +118,25 @@ impl Channel {
                 self.master = Some(unsafe { File::from_raw_fd(master_fd) });
             }
             ChannelRequest::Shell => {
-                if let Some(&(_, ref tty_path)) = self.pty.as_ref() {
+                if let Some((_, tty_path)) = self.pty.as_ref() {
                     let stdin = OpenOptions::new()
                         .read(true)
                         .write(true)
-                        .open(&tty_path)
+                        .open(tty_path)
                         .unwrap()
                         .into_raw_fd();
 
                     let stdout = OpenOptions::new()
                         .read(true)
                         .write(true)
-                        .open(&tty_path)
+                        .open(tty_path)
                         .unwrap()
                         .into_raw_fd();
 
                     let stderr = OpenOptions::new()
                         .read(true)
                         .write(true)
-                        .open(&tty_path)
+                        .open(tty_path)
                         .unwrap()
                         .into_raw_fd();
 
@@ -145,7 +145,7 @@ impl Channel {
                             .stdin(Stdio::from_raw_fd(stdin))
                             .stdout(Stdio::from_raw_fd(stdout))
                             .stderr(Stdio::from_raw_fd(stderr))
-                            .pre_exec(|| sys::before_exec())
+                            .pre_exec(sys::before_exec)
                         }
                         .spawn()
                         .unwrap();

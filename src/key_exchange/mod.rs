@@ -15,7 +15,7 @@ pub enum KexResult {
 
 pub trait KeyExchange {
     fn process(&mut self, conn: &mut Connection, packet: Packet) -> KexResult;
-    fn shared_secret<'a>(&'a self) -> Option<&'a [u8]>;
-    fn exchange_hash<'a>(&'a self) -> Option<&'a [u8]>;
+    fn shared_secret(&self) -> Option<&[u8]>;
+    fn exchange_hash(&self) -> Option<&[u8]>;
     fn hash(&self, data: &[&[u8]]) -> Vec<u8>;
 }

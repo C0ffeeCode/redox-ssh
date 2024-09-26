@@ -3,7 +3,6 @@ extern crate log;
 
 use std::env;
 use std::fs::File;
-use std::io::{self, Write};
 use std::process;
 use std::str::FromStr;
 
@@ -21,8 +20,7 @@ impl log::Log for StdErrLogger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            writeln!(io::stderr(), "{} - {}", record.level(), record.args())
-                .unwrap();
+            eprintln!("{} - {}", record.level(), record.args());
         }
     }
     
@@ -40,8 +38,7 @@ pub fn main() {
     );
 
     if let Some(ref err) = key_pair.as_ref().err() {
-        writeln!(io::stderr(), "sshd: failed to open server.key: {}", err)
-            .unwrap();
+        eprintln!("sshd: failed to open server.key: {}", err);
         process::exit(1);
     }
 
@@ -82,7 +79,7 @@ pub fn main() {
     let server = Server::with_config(config);
 
     if let Err(err) = server.run() {
-        writeln!(io::stderr(), "sshd: {}", err).unwrap();
+        eprintln!("sshd: {}", err);
         process::exit(1);
     }
 }

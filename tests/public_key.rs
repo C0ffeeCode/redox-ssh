@@ -3,7 +3,7 @@ extern crate rand;
 
 use std::io::Cursor;
 
-use rand::{Rng, RngCore};
+use rand::RngCore;
 use ssh::public_key::{self, CryptoSystem, KeyPair};
 
 fn test_export_import(keypair: &Box<dyn KeyPair>) -> Box<dyn KeyPair> {

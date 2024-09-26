@@ -18,8 +18,8 @@ impl<'a> Decryptor<'a> {
     pub fn new(encryption: &'a mut dyn Encryption, stream: &'a mut dyn Read)
         -> Decryptor<'a> {
         Decryptor {
-            encryption: encryption,
-            stream: stream,
+            encryption,
+            stream,
         }
     }
 }

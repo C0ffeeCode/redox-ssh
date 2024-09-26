@@ -27,12 +27,12 @@ impl Curve25519 {
 }
 
 impl KeyExchange for Curve25519 {
-    fn shared_secret<'a>(&'a self) -> Option<&'a [u8]> {
+    fn shared_secret(&self) -> Option<&[u8]> {
         self.shared_secret.as_ref().map(|x| x as &[u8])
     }
 
-    fn exchange_hash<'a>(&'a self) -> Option<&'a [u8]> {
-        self.exchange_hash.as_ref().map(|x| x.as_slice())
+    fn exchange_hash(&self) -> Option<&[u8]> {
+        self.exchange_hash.as_deref()
     }
 
     fn hash(&self, data: &[&[u8]]) -> Vec<u8> {
@@ -56,7 +56,7 @@ impl KeyExchange for Curve25519 {
 
                 let config = match &conn.conn_type
                 {
-                    &ConnectionType::Server(ref config) => config.clone(),
+                    ConnectionType::Server(config) => config.clone(),
                     _ => return KexResult::Error,
                 };
 

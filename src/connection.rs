@@ -49,7 +49,7 @@ pub struct Connection {
 impl<'a> Connection {
     pub fn new(conn_type: ConnectionType) -> Connection {
         Connection {
-            conn_type: conn_type,
+            conn_type,
             hash_data: HashData::default(),
             state: ConnectionState::Initial,
             key_exchange: None,
@@ -147,8 +147,8 @@ impl<'a> Connection {
         let id = format!("SSH-2.0-RedoxSSH_{}", env!("CARGO_PKG_VERSION"));
         info!("Identifying as {:?}", id);
 
-        stream.write(id.as_bytes())?;
-        stream.write(b"\r\n")?;
+        stream.write_all(id.as_bytes())?;
+        stream.write_all(b"\r\n")?;
         stream.flush()?;
 
         self.hash_data.server_id = Some(id);
@@ -246,7 +246,7 @@ impl<'a> Connection {
 
         trace!(
             "Service Request {:?}",
-            ::std::str::from_utf8(&name.as_slice()).unwrap()
+            ::std::str::from_utf8(name.as_slice()).unwrap()
         );
 
         let mut res = Packet::new(MessageType::ServiceAccept);
@@ -262,7 +262,7 @@ impl<'a> Connection {
         let method = reader.read_utf8()?;
 
         let success = if method == "password" {
-            assert!(reader.read_bool()? == false);
+            assert!(!(reader.read_bool()?));
             let pass = reader.read_utf8()?;
             pass == "hunter2"
         }
@@ -406,7 +406,7 @@ impl<'a> Connection {
 
         // Create a random 16 byte cookie
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        let rng = rand::thread_rng();
         let cookie: Vec<u8> = rng.sample_iter(Standard).take(16).collect();
 
         let mut packet = Packet::new(MessageType::KexInit);

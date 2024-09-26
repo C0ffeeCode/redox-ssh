@@ -53,7 +53,7 @@ impl Ed25519KeyPair {
         r.read_exact(&mut private)?;
 
         Ok(Box::new(Ed25519KeyPair {
-            public: public,
+            public,
             private: Some(private),
         }))
     }
@@ -70,7 +70,7 @@ impl Ed25519KeyPair {
 
         Ok(Box::new(Ed25519KeyPair {
             private: None,
-            public: public,
+            public,
         }))
     }
 }
@@ -89,7 +89,7 @@ impl KeyPair for Ed25519KeyPair {
         use std::io::Cursor;
 
         let mut reader = Cursor::new(signature);
-        let id = reader.read_string().unwrap_or(vec![]);
+        let id = reader.read_string().unwrap_or_default();
 
         if id == b"ssh-ed25519" {
             if let Ok(sig) = reader.read_string() {
