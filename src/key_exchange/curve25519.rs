@@ -1,8 +1,10 @@
-use crypto::curve25519;
-use crypto::digest::Digest;
-use crypto::sha2::Sha256;
+use curve25519_dalek::{MontgomeryPoint, Scalar};
+// use crypto::curve25519;
+// use crypto::digest::Digest;
+// use crypto::sha2::Sha256;
 use num_bigint::{BigInt, Sign};
 use rand::RngCore;
+use sha2::{Digest, Sha256};
 
 use crate::connection::{Connection, ConnectionType};
 use crate::key_exchange::{KexResult, KeyExchange};
@@ -36,14 +38,14 @@ impl KeyExchange for Curve25519 {
     }
 
     fn hash(&self, data: &[&[u8]]) -> Vec<u8> {
-        let mut hash = [0; 32];
+        // let mut hash = [0; 32];
         let mut hasher = Sha256::new();
 
         for item in data {
-            hasher.input(item);
+            hasher.update(item);
         }
 
-        hasher.result(&mut hash);
+        let hash = hasher.finalize();
         hash.to_vec()
     }
 
@@ -81,15 +83,31 @@ impl KeyExchange for Curve25519 {
                     secret
                 };
 
-                let server_public = curve25519::curve25519_base(&server_secret);
+                // let server_public = crypto::curve25519::curve25519_base(&server_secret);
+                // let shared_secret = {
+                //     let mut buf = Vec::new();
+                //     buf.write_mpint(BigInt::from_bytes_be(
+                //         Sign::Plus,
+                //         &crypto::curve25519::curve25519(&server_secret, &client_public),
+                //     )).ok();
+                //     buf
+                // };
+
+                // -------------------------------------
+
+                let server_secret_scalar = Scalar::from_bytes_mod_order(server_secret);
+                let server_public = MontgomeryPoint::mul_base(&server_secret_scalar);
                 let shared_secret = {
                     let mut buf = Vec::new();
-                    buf.write_mpint(BigInt::from_bytes_be(
-                        Sign::Plus,
-                        &curve25519::curve25519(&server_secret, &client_public),
-                    )).ok();
+                    let client_public_array: [u8; 32] = client_public.clone().try_into().unwrap(); // TODO
+                    let client_public_point = MontgomeryPoint(client_public_array);
+                    let server_secret_scalar = Scalar::from_bytes_mod_order(server_secret);
+                    let shared_secret_point = client_public_point * server_secret_scalar;
+                    buf.write_mpint(BigInt::from_bytes_be(Sign::Plus, &shared_secret_point.to_bytes())).ok();
                     buf
                 };
+
+                //-------------------------------
 
                 let hash_data = {
                     let mut buf = Vec::new();
@@ -103,7 +121,7 @@ impl KeyExchange for Curve25519 {
                             data.server_kexinit.as_ref().unwrap().as_slice(),
                             public_key.as_slice(),
                             client_public.as_slice(),
-                            &server_public,
+                            &server_public.to_bytes(),
                         ];
 
                     for item in items.iter() {
@@ -120,7 +138,7 @@ impl KeyExchange for Curve25519 {
                 let signature = config.as_ref().key.sign(&hash).unwrap();
 
                 packet.write_bytes(public_key.as_slice()).unwrap();
-                packet.write_bytes(&server_public).unwrap();
+                packet.write_bytes(&server_public.to_bytes()).unwrap();
                 packet.write_bytes(signature.as_slice()).unwrap(); // Signature
 
                 self.exchange_hash = Some(hash);

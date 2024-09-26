@@ -1,6 +1,9 @@
-mod hmac;
 
-pub use self::hmac::Hmac;
+// mod hmac;
+mod hmac_new;
+
+// pub use self::hmac::Hmac;
+pub use self::hmac_new::ExtHmac as Hmac;
 
 pub trait MacAlgorithm {
     fn size(&self) -> usize;
