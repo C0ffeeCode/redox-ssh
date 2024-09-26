@@ -1,11 +1,10 @@
 use std::io::{self, Read, Write};
 
-// mod rsa;
 mod ed25519;
-
-// pub use self::rsa::RSA;
+// mod rsa;
 
 pub use self::ed25519::ED25519;
+// pub use self::rsa::RSA;
 
 pub trait KeyPair: Sync + Send {
     fn system(&self) -> &'static CryptoSystem;

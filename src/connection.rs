@@ -46,7 +46,7 @@ pub struct Connection {
     channels: BTreeMap<ChannelId, Channel>,
 }
 
-impl<'a> Connection {
+impl Connection {
     pub fn new(conn_type: ConnectionType) -> Connection {
         Connection {
             conn_type,
@@ -103,7 +103,7 @@ impl<'a> Connection {
             mac.sign(packet.data(), self.seq.0, sig_cmp.as_mut_slice());
 
             if sig != sig_cmp {
-                return Err(ConnectionError::IntegrityError);
+                return Err(ConnectionError::Integrity);
             }
         }
 
@@ -119,7 +119,7 @@ impl<'a> Connection {
         -> io::Result<()> {
         debug!("Sending packet {}: {:?}", self.seq.1, packet);
 
-        let packet = packet.to_raw()?;
+        let packet = packet.into_raw()?;
 
         if let Some((_, ref mut s2c)) = self.encryption {
             let mut encrypted = vec![0; packet.data().len()];
@@ -177,18 +177,18 @@ impl<'a> Connection {
     }
 
     fn generate_key(&mut self, id: &[u8], len: usize) -> Result<Vec<u8>> {
-        use self::ConnectionError::KeyGenerationError;
+        use self::ConnectionError::KeyGeneration;
 
-        let kex = self.key_exchange.take().ok_or(KeyGenerationError)?;
+        let kex = self.key_exchange.take().ok_or(KeyGeneration)?;
 
         let key = kex.hash(
             &[
-                kex.shared_secret().ok_or(KeyGenerationError)?,
-                kex.exchange_hash().ok_or(KeyGenerationError)?,
+                kex.shared_secret().ok_or(KeyGeneration)?,
+                kex.exchange_hash().ok_or(KeyGeneration)?,
                 id,
                 self.session_id
                     .as_ref()
-                    .ok_or(KeyGenerationError)?
+                    .ok_or(KeyGeneration)?
                     .as_slice(),
             ],
         );
@@ -211,7 +211,7 @@ impl<'a> Connection {
             MessageType::KeyExchange(_) => self.key_exchange(packet),
             _ => {
                 error!("Unhandled packet: {:?}", packet);
-                Err(ConnectionError::ProtocolError)
+                Err(ConnectionError::Protocol)
             }
         }
     }
@@ -435,7 +435,7 @@ impl<'a> Connection {
 
     fn key_exchange(&mut self, packet: Packet) -> Result<Option<Packet>> {
         let mut kex = self.key_exchange.take().ok_or(
-            ConnectionError::KeyExchangeError,
+            ConnectionError::KeyExchange,
         )?;
 
         let result = match kex.process(self, packet)
@@ -452,7 +452,7 @@ impl<'a> Connection {
                 Ok(Some(packet))
             }
             KexResult::Ok(packet) => Ok(Some(packet)),
-            KexResult::Error => Err(ConnectionError::KeyExchangeError),
+            KexResult::Error => Err(ConnectionError::KeyExchange),
         };
 
 

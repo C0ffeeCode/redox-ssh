@@ -84,7 +84,7 @@ impl Packet {
         }
     }
 
-    pub fn to_raw(self) -> Result<Packet> {
+    pub fn into_raw(self) -> Result<Packet> {
         match self
         {
             Packet::Raw(_, _) => Ok(self),
@@ -134,10 +134,10 @@ impl Packet {
 
 impl Write for Packet {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
-        match self
+        match *self
         {
-            &mut Packet::Payload(ref mut payload) => payload.write(buf),
-            &mut Packet::Raw(ref mut data, ref mut payload_len) => {
+            Packet::Payload(ref mut payload) => payload.write(buf),
+            Packet::Raw(ref mut data, ref mut payload_len) => {
                 let count = data.write(buf)?;
                 *payload_len += count;
                 Ok(count)

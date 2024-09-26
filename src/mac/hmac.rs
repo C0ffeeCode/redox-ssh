@@ -25,7 +25,7 @@ impl MacAlgorithm for Hmac {
             ((seq & 0xff000000) >> 24) as u8,
             ((seq & 0x00ff0000) >> 16) as u8,
             ((seq & 0x0000ff00) >> 8) as u8,
-            ((seq & 0x000000ff)) as u8,
+            (seq & 0x000000ff) as u8,
         ];
 
         self.hmac.input(sequence);
