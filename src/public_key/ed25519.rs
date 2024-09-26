@@ -4,7 +4,9 @@ use std::io::ErrorKind::InvalidData;
 use crypto::ed25519;
 use rand::RngCore;
 
-use crate::public_key::{CryptoSystem, KeyPair};
+use crate::public_key::{
+    CryptoSystem, KeyPair, KeyPairIdValidationError, SigningError
+};
 
 pub static ED25519: CryptoSystem = CryptoSystem {
     id: "ed25519",
@@ -84,32 +86,34 @@ impl KeyPair for Ed25519KeyPair {
         self.private.is_some()
     }
 
-    fn verify(&self, data: &[u8], signature: &[u8]) -> Result<bool, ()> {
-        use crate::packet::ReadPacketExt;
+    fn verify(&self, data: &[u8], signature: &[u8]) -> Result<bool, KeyPairIdValidationError> {
         use std::io::Cursor;
+        use crate::packet::ReadPacketExt;
+
+        const EXPECTED_ID: &[u8] = b"ssh-ed25519";
 
         let mut reader = Cursor::new(signature);
-        let id = reader.read_string().unwrap_or_default();
+        let received_id = reader.read_string().unwrap_or_default();
 
-        if id == b"ssh-ed25519" {
+        if received_id == EXPECTED_ID {
             if let Ok(sig) = reader.read_string() {
                 return Ok(ed25519::verify(data, &self.public, sig.as_slice()));
             }
         }
-        Err(())
+        Err(KeyPairIdValidationError {received_id, expected_id: EXPECTED_ID })
     }
 
-    fn sign(&self, data: &[u8]) -> Result<Vec<u8>, ()> {
+    fn sign(&self, data: &[u8]) -> Result<Vec<u8>, SigningError> {
         use crate::packet::WritePacketExt;
         if let Some(private_key) = self.private {
             let mut result = Vec::new();
             let sig = ed25519::signature(data, &private_key);
-            result.write_string("ssh-ed25519").or(Err(()))?;
-            result.write_bytes(&sig).or(Err(()))?;
+            result.write_string("ssh-ed25519")?;
+            result.write_bytes(&sig)?;
             Ok(result)
         }
         else {
-            Err(())
+            Err(SigningError::NoPrivateKey)
         }
     }
 
