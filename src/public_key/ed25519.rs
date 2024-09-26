@@ -3,7 +3,7 @@ use std::io::ErrorKind::InvalidData;
 
 use crypto::ed25519;
 use public_key::{CryptoSystem, KeyPair};
-use rand::Rng;
+use rand::{Rng, RngCore};
 
 pub static ED25519: CryptoSystem = CryptoSystem {
     id: "ed25519",

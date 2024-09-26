@@ -23,12 +23,12 @@ path = "src/bin/ssh-keygen.rs"
 doc = false
 
 [dependencies]
-byteorder = "^1.0"
-log = "^0.3"
-num-bigint = "0.4"
-rand = "^0.3"
-rust-crypto = "^0.2"
-rustc-serialize = "=0.3.20"
+byteorder = "^1.5.0"
+log = "^0.4.22"
+num-bigint = "0.4.6"
+rand = "^0.8.5"
+rust-crypto = "^0.2.36"
+rustc-serialize = "^0.3.25"
 
 [target.'cfg(not(target_os = "redox"))'.dependencies]
 libc = "^0.2.26" 

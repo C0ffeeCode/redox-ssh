@@ -9,6 +9,7 @@ use key_exchange::{KexResult, KeyExchange};
 use mac::{Hmac, MacAlgorithm};
 use message::MessageType;
 use packet::{Packet, ReadPacketExt, WritePacketExt};
+use rand::distributions::Standard;
 use server::ServerConfig;
 
 #[derive(PartialEq)]
@@ -405,7 +406,7 @@ impl<'a> Connection {
         // Create a random 16 byte cookie
         use rand::Rng;
         let mut rng = rand::thread_rng();
-        let cookie: Vec<u8> = rng.gen_iter::<u8>().take(16).collect();
+        let cookie: Vec<u8> = rng.sample_iter(Standard).take(16).collect();
 
         let mut packet = Packet::new(MessageType::KexInit);
         packet.write_raw_bytes(cookie.as_slice())?;

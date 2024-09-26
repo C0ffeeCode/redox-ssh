@@ -7,7 +7,7 @@ use std::io::{self, Write};
 use std::process;
 use std::str::FromStr;
 
-use log::{LogLevelFilter, LogMetadata, LogRecord};
+use log::{LevelFilter, Metadata, Record};
 
 use ssh::{Server, ServerConfig};
 use ssh::public_key::ED25519;
@@ -15,20 +15,24 @@ use ssh::public_key::ED25519;
 struct StdErrLogger;
 
 impl log::Log for StdErrLogger {
-    fn enabled(&self, _: &LogMetadata) -> bool {
+    fn enabled(&self, _: &Metadata) -> bool {
         true
     }
 
-    fn log(&self, record: &LogRecord) {
+    fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
             writeln!(io::stderr(), "{} - {}", record.level(), record.args())
                 .unwrap();
         }
     }
+    
+    fn flush(&self) {
+        todo!()
+    }
 }
 
 pub fn main() {
-    let mut verbosity = LogLevelFilter::Warn;
+    let mut verbosity = LevelFilter::Warn;
     let mut foreground = false;
 
     let key_pair = File::open("server.key").and_then(
@@ -51,9 +55,9 @@ pub fn main() {
     while let Some(arg) = args.next() {
         match arg.as_ref()
         {
-            "-v" => verbosity = LogLevelFilter::Info,
-            "-vv" => verbosity = LogLevelFilter::Debug,
-            "-vvv" => verbosity = LogLevelFilter::Trace,
+            "-v" => verbosity = LevelFilter::Info,
+            "-vv" => verbosity = LevelFilter::Debug,
+            "-vvv" => verbosity = LevelFilter::Trace,
             "-f" => foreground = true,
             "-p" => {
                 config.port =
@@ -65,10 +69,8 @@ pub fn main() {
         }
     }
 
-    log::set_logger(|max_log_level| {
-        max_log_level.set(verbosity);
-        Box::new(StdErrLogger)
-    }).unwrap();
+    log::set_logger(&StdErrLogger).unwrap();
+    log::set_max_level(verbosity);
 
     if !foreground {
         use ssh::sys::fork;
