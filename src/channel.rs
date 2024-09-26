@@ -140,11 +140,13 @@ impl Channel {
                         .unwrap()
                         .into_raw_fd();
 
-                    process::Command::new("login")
-                        .stdin(unsafe { Stdio::from_raw_fd(stdin) })
-                        .stdout(unsafe { Stdio::from_raw_fd(stdout) })
-                        .stderr(unsafe { Stdio::from_raw_fd(stderr) })
-                        .before_exec(|| sys::before_exec()) // TODO: listen to compiler warning
+                    unsafe {
+                        process::Command::new("login")
+                            .stdin(Stdio::from_raw_fd(stdin))
+                            .stdout(Stdio::from_raw_fd(stdout))
+                            .stderr(Stdio::from_raw_fd(stderr))
+                            .pre_exec(|| sys::before_exec())
+                        }
                         .spawn()
                         .unwrap();
                 }
