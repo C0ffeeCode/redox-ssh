@@ -170,8 +170,7 @@ impl Connection {
             info!("Peer identifies as {:?}", id);
             self.hash_data.client_id = Some(id.to_owned());
             Ok(())
-        }
-        else {
+        } else {
             Err(io::Error::new(io::ErrorKind::InvalidData, "invalid id"))
         }
     }
@@ -199,8 +198,7 @@ impl Connection {
     }
 
     pub fn process(&mut self, packet: Packet) -> Result<Option<Packet>> {
-        match packet.msg_type()
-        {
+        match packet.msg_type() {
             MessageType::KexInit => self.kex_init(packet),
             MessageType::NewKeys => self.new_keys(packet),
             MessageType::ServiceRequest => self.service_request(packet),
@@ -265,8 +263,7 @@ impl Connection {
             assert!(!(reader.read_bool()?));
             let pass = reader.read_utf8()?;
             pass == "hunter2"
-        }
-        else {
+        } else {
             false
         };
 
@@ -274,8 +271,7 @@ impl Connection {
 
         if success {
             Ok(Some(Packet::new(MessageType::UserAuthSuccess)))
-        }
-        else {
+        } else {
             let mut res = Packet::new(MessageType::UserAuthFailure);
             res.write_string("password")?;
             res.write_bool(false)?;
@@ -293,8 +289,7 @@ impl Connection {
 
         let id = if let Some((id, chan)) = self.channels.iter().next_back() {
             id + 1
-        }
-        else {
+        } else {
             0
         };
 
@@ -319,9 +314,7 @@ impl Connection {
         let name = reader.read_utf8()?;
         let want_reply = reader.read_bool()?;
 
-
-        let request = match &*name
-        {
+        let request = match &*name {
             "pty-req" => Some(ChannelRequest::Pty {
                 term: reader.read_utf8()?,
                 chars: reader.read_uint32()? as u16,
@@ -334,12 +327,10 @@ impl Connection {
             _ => None,
         };
 
-
         if let Some(request) = request {
             let channel = self.channels.get_mut(&channel_id).unwrap();
             channel.request(request);
-        }
-        else {
+        } else {
             warn!("Unkown channel request {}", name);
         }
 
@@ -347,8 +338,7 @@ impl Connection {
             let mut res = Packet::new(MessageType::ChannelSuccess);
             res.write_uint32(0)?;
             Ok(Some(res))
-        }
-        else {
+        } else {
             Ok(None)
         }
     }
@@ -375,16 +365,18 @@ impl Connection {
             let srv_host_key_algos =
                 reader.read_enum_list::<PublicKeyAlgorithm>()?;
 
-            let enc_algos_c2s = reader.read_enum_list::<EncryptionAlgorithm>()?;
-            let enc_algos_s2c = reader.read_enum_list::<EncryptionAlgorithm>()?;
+            let enc_algos_c2s =
+                reader.read_enum_list::<EncryptionAlgorithm>()?;
+            let enc_algos_s2c =
+                reader.read_enum_list::<EncryptionAlgorithm>()?;
 
             let mac_algos_c2s = reader.read_enum_list::<MacAlgorithm>()?;
             let mac_algos_s2c = reader.read_enum_list::<MacAlgorithm>()?;
 
-            let comp_algos_c2s = reader
-                .read_enum_list::<CompressionAlgorithm>()?;
-            let comp_algos_s2c = reader
-                .read_enum_list::<CompressionAlgorithm>()?;
+            let comp_algos_c2s =
+                reader.read_enum_list::<CompressionAlgorithm>()?;
+            let comp_algos_s2c =
+                reader.read_enum_list::<CompressionAlgorithm>()?;
 
             (
                 negotiate(KEY_EXCHANGE, kex_algos.as_slice())?,
@@ -434,12 +426,12 @@ impl Connection {
     }
 
     fn key_exchange(&mut self, packet: Packet) -> Result<Option<Packet>> {
-        let mut kex = self.key_exchange.take().ok_or(
-            ConnectionError::KeyExchange,
-        )?;
+        let mut kex = self
+            .key_exchange
+            .take()
+            .ok_or(ConnectionError::KeyExchange)?;
 
-        let result = match kex.process(self, packet)
-        {
+        let result = match kex.process(self, packet) {
             KexResult::Done(packet) => {
                 self.state = ConnectionState::Established;
 
@@ -454,7 +446,6 @@ impl Connection {
             KexResult::Ok(packet) => Ok(Some(packet)),
             KexResult::Error => Err(ConnectionError::KeyExchange),
         };
-
 
         self.key_exchange = Some(kex);
         result

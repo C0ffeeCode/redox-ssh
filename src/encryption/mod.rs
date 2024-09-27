@@ -1,8 +1,10 @@
 use std::io::{self, Read};
 
-mod aes_ctr;
+// mod aes_ctr;
+mod aes_ctr_new;
 
-pub use self::aes_ctr::AesCtr;
+// pub use self::aes_ctr::AesCtr;
+pub use self::aes_ctr_new::AesCtr;
 
 pub trait Encryption {
     fn encrypt(&mut self, data: &[u8], buf: &mut [u8]);
