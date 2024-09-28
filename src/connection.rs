@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use rand::distributions::Standard;
 
-use crate::channel::{Channel, ChannelId, ChannelRequest};
+use crate::channel::{Channel, ChannelId, ChannelRequest, PtyConfig};
 use crate::encryption::{AesCtr, Decryptor, Encryption};
 use crate::error::{ConnectionError, ConnectionResult as Result};
 use crate::key_exchange::{KexResult, KeyExchange};
@@ -315,21 +315,21 @@ impl Connection {
         let want_reply = reader.read_bool()?;
 
         let request = match &*name {
-            "pty-req" => Some(ChannelRequest::Pty {
+            "pty-req" => Some(ChannelRequest::Pty(PtyConfig {
                 term: reader.read_utf8()?,
                 chars: reader.read_uint32()? as u16,
                 rows: reader.read_uint32()? as u16,
                 pixel_width: reader.read_uint32()? as u16,
                 pixel_height: reader.read_uint32()? as u16,
                 modes: reader.read_string()?,
-            }),
+            })),
             "shell" => Some(ChannelRequest::Shell),
             _ => None,
         };
 
         if let Some(request) = request {
             let channel = self.channels.get_mut(&channel_id).unwrap();
-            channel.request(request);
+            channel.handle_request(request);
         } else {
             warn!("Unkown channel request {}", name);
         }
@@ -349,7 +349,7 @@ impl Connection {
         let data = reader.read_string()?;
 
         let channel = self.channels.get_mut(&channel_id).unwrap();
-        channel.data(data.as_slice())?;
+        channel.write_data(data.as_slice())?;
 
         Ok(None)
     }
