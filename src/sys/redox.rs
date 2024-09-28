@@ -7,21 +7,24 @@ pub fn before_exec() -> Result<()> {
 }
 
 pub fn fork() -> usize {
-    extern crate syscall;
-    unsafe { syscall::clone(syscall::CloneFlags::empty()).unwrap() }
+    todo!("You must specify -f, the old forking for Redox doesn't work anyway.");
+    // The following on't work anyway
+    // but will panic due to missing implementation
+    // extern crate syscall;
+    // unsafe { syscall::clone(syscall::CloneFlags::empty()).unwrap() }
 }
 
 pub fn set_winsize(fd: RawFd, row: u16, col: u16, xpixel: u16, ypixel: u16) {}
 
 pub fn getpty() -> (RawFd, PathBuf) {
-    use syscall;
+    use libredox::{call, flag};
 
-    let master = syscall::open("pty:", syscall::O_RDWR | syscall::O_CREAT)
+    let master = call::open("pty:", flag::O_RDWR | flag::O_CREAT, 777)
         .unwrap();
 
     let mut buf: [u8; 4096] = [0; 4096];
 
-    let count = syscall::fpath(master, &mut buf).unwrap();
+    let count = call::fpath(master, &mut buf).unwrap();
     (
         master as i32,
         PathBuf::from(unsafe {

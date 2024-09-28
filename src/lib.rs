@@ -4,8 +4,8 @@ extern crate rand;
 extern crate num_bigint;
 #[macro_use]
 extern crate log;
-#[cfg(target_os = "redox")]
-extern crate syscall;
+// #[cfg(target_os = "redox")]
+// extern crate syscall;
 #[cfg(not(target_os = "redox"))]
 extern crate libc;
 

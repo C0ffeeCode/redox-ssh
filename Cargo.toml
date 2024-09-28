@@ -23,6 +23,9 @@ name = "ssh-keygen"
 path = "src/bin/ssh-keygen.rs"
 doc = false
 
+[features]
+default = []
+
 [dependencies]
 byteorder = "^1.5.0"
 log = "^0.4.22"
@@ -46,3 +49,4 @@ libc = "^0.2.159"
 
 [target.'cfg(target_os = "redox")'.dependencies]
 redox_syscall = "0.2"
+libredox = "~0.1.3" # Does not follow SemVer

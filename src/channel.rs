@@ -88,14 +88,9 @@ impl Channel {
 
                 self.read_thread = Some(thread::spawn(move || {
                     #[cfg(target_os = "redox")]
-                    use syscall::dup;
-                    #[cfg(target_os = "redox")]
-                    let master2 = unsafe { dup(master_fd as usize, &[]).unwrap_or(!0) };
-
+                    let master2 = unsafe { syscall::dup(master_fd as usize, &[]).unwrap_or(!0) };
                     #[cfg(not(target_os = "redox"))]
-                    use libc::dup;
-                    #[cfg(not(target_os = "redox"))]
-                    let master2 = unsafe { dup(master_fd) };
+                    let master2 = unsafe { libc::dup(master_fd) };
 
                     println!("dup result: {}", master2 as u32);
                     let mut master = unsafe { File::from_raw_fd(master2 as i32) };
@@ -103,6 +98,9 @@ impl Channel {
                         use std::str::from_utf8_unchecked;
                         let mut buf = [0; 4096];
                         let count = master.read(&mut buf).unwrap();
+                        // This is weird.
+                        // An error is thrown&unwrapped here (panic)
+                        // but yet it continues to function properly
                         if count == 0 {
                             break;
                         }
