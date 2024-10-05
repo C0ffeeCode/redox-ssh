@@ -62,16 +62,23 @@ impl Connection {
         }
     }
 
-    pub fn run<S: Read + Write>(&mut self, stream: &mut S) -> Result<()> {
+    pub fn run<S: Read + Write + std::os::fd::AsRawFd>(&mut self, stream: &mut S) -> Result<()> {
         self.send_id(stream)?;
         self.read_id(stream)?;
 
+        crate::sys::non_blockify_reader(stream);
         let mut reader = BufReader::new(stream);
 
         loop {
-            let packet = self.recv(&mut reader)?;
-            let response = self.process(packet)?;
+            std::thread::sleep(std::time::Duration::from_millis(1)); // TODO: REMOVE: debugging
+            let response = match self.recv(&mut reader) {
+                Ok(packet) => self.process_packet(packet)?,
+                Err(ConnectionError::Io(ref io_err)) if io_err.kind() == io::ErrorKind::WouldBlock => None,
+                Err(err) => return Err(err),
+            };
+            // let response = self.process_packet(packet)?;
 
+            // Take back ownership of the stream
             let mut stream = reader.get_mut();
 
             if let Some(packet) = response {
@@ -80,6 +87,32 @@ impl Connection {
 
             // Send additional packets from the queue
             let mut packets: Vec<Packet> = self.tx_queue.drain(..).collect();
+            // Include packets from command output
+            // TODO: Consider pushing to `tx_queue`?
+            for (_, channel) in self.channels.iter_mut() {
+                let mut buf = String::with_capacity(1024);
+                if channel.read_pty_master(unsafe { buf.as_mut_vec() }).unwrap_or(0) != 0 {
+                    let mut packet = Packet::new(MessageType::ChannelData);
+                    packet.write_uint32(channel.id())?;
+                    packet.write_string(&buf)?;
+                    info!("AHAA! {:?}", &packet);
+                    packets.push(packet)
+                }
+                if channel.read_stdout(&mut buf).unwrap_or(0) != 0 {
+                    let mut packet = Packet::new(MessageType::ChannelData);
+                    packet.write_uint32(channel.id())?;
+                    packet.write_string(&buf)?;
+                    packets.push(packet)
+                }
+                if channel.read_stderr(&mut buf).unwrap_or(0) != 0 {
+                    let mut packet = Packet::new(MessageType::ChannelExtendedData);
+                    packet.write_uint32(channel.id())?;
+                    packet.write_uint32(1)?; // Data Type Code for stderr
+                    packet.write_string(&buf)?;
+                    packets.push(packet)
+                }
+            }
+            // Actually send the queued packets
             for packet in packets.drain(..) {
                 self.send(&mut stream, packet)?;
             }
@@ -89,11 +122,10 @@ impl Connection {
     fn recv(&mut self, mut stream: &mut dyn Read) -> Result<Packet> {
         let packet = if let Some((ref mut c2s, _)) = self.encryption {
             let mut decryptor = Decryptor::new(&mut **c2s, &mut stream);
-            Packet::read_from(&mut decryptor)?
-        }
-        else {
-            Packet::read_from(&mut stream)?
-        };
+            Packet::read_from(&mut decryptor)
+        } else {
+            Packet::read_from(&mut stream)
+        }?;
 
         if let Some((ref mut mac, _)) = self.mac {
             let mut sig = vec![0; mac.size()];
@@ -197,7 +229,7 @@ impl Connection {
         Ok(key)
     }
 
-    pub fn process(&mut self, packet: Packet) -> Result<Option<Packet>> {
+    pub fn process_packet(&mut self, packet: Packet) -> Result<Option<Packet>> {
         match packet.msg_type() {
             MessageType::KexInit => self.kex_init(packet),
             MessageType::NewKeys => self.new_keys(packet),

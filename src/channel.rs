@@ -2,22 +2,25 @@ mod pty;
 mod shell;
 
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::{self, BufRead, Read, Write};
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;
 use std::process;
 use std::thread::JoinHandle;
 
 pub use pty::PtyConfig;
+use shell::PipeContainer;
 
 pub type ChannelId = u32;
 
 #[derive(Debug)]
+/// TODO: Split into channel types, i.e. `PtyChannel` and `ShellChannel`
 pub struct Channel {
     id: ChannelId,
     peer_id: ChannelId,
     process: Option<process::Child>,
     pty: Option<(RawFd, PathBuf)>,
+    pipes: Option<PipeContainer>,
     master: Option<File>,
     window_size: u32,
     peer_window_size: u32,
@@ -44,6 +47,7 @@ impl Channel {
             process: None,
             master: None,
             pty: None,
+            pipes: None,
             window_size: peer_window_size,
             peer_window_size,
             max_packet_size,
@@ -71,12 +75,44 @@ impl Channel {
         debug!("Channel Request: {:?}", request);
     }
 
+    /// Writes `data` **to** this channel;
     pub fn write_data(&mut self, data: &[u8]) -> io::Result<()> {
         if let Some(ref mut master) = self.master {
             master.write_all(data)?;
             master.flush()
+        } else if let Some(PipeContainer { ref mut stdin, .. }) = self.pipes {
+            stdin.write_all(data)?;
+            stdin.flush()
         } else {
             Ok(())
+        }
+    }
+
+    /// Reads data **from** this channel and writes it **to** the buffer/.
+    pub fn read_pty_master(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        if let Some(ref mut master) = self.master {
+            master.read(buf)
+        } else {
+            Ok(0)
+        }
+    }
+
+    /// Reads data **from** this channel and writes it **to** the buffer/.
+    pub fn read_stdout(&mut self, buf: &mut String) -> io::Result<usize> {
+        if let Some(pipes) = &mut self.pipes {
+            let res_len = pipes.stdout.read_line(buf);
+            res_len
+        } else {
+            Ok(0)
+        }
+    }
+
+    pub fn read_stderr(&mut self, buf: &mut String) -> io::Result<usize> {
+        if let Some(pipes) = &mut self.pipes {
+            let res_len = pipes.stderr.read_line(buf);
+            res_len
+        } else {
+            Ok(0)
         }
     }
 }

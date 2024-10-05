@@ -1,4 +1,4 @@
-use std::{fs::File, io::Read, os::fd::FromRawFd, thread};
+use std::{fs::File, io::{Read, Write}, os::fd::FromRawFd, thread};
 
 use crate::sys;
 
@@ -62,9 +62,8 @@ impl Channel {
                 if count == 0 {
                     break;
                 }
-                println!("Read: {}", unsafe {
-                    from_utf8_unchecked(&buf[0..count])
-                });
+                let data_read = unsafe { from_utf8_unchecked(&buf[0..count]) };
+                println!("Read: {}", data_read);
             }
 
             println!("Quitting read thread.");
