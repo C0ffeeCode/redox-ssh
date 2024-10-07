@@ -21,7 +21,7 @@ impl Channel {
         match self.pty.as_ref() {
             Some((_, tty_path)) => with_tty(tty_path),
             None => {
-                let pipes = without_tty();
+                let pipes = self.without_tty();
                 #[cfg(unix)]
                 use crate::sys::non_blockify_reader;
                 non_blockify_reader(pipes.stdout.get_ref());
@@ -30,23 +30,25 @@ impl Channel {
             },
         }
     }
-}
 
-fn without_tty() -> PipeContainer {
-    let proc = unsafe {
-        process::Command::new("/bin/sh")    
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .pre_exec(sys::before_exec)
-            .spawn()
-            .unwrap()
-    };
+    fn without_tty(&mut self) -> PipeContainer {
+        let proc = unsafe {
+            process::Command::new("/bin/sh")
+                // .env_clear()
+                .envs(self.env.drain(..))
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .pre_exec(sys::before_exec)
+                .spawn()
+                .unwrap()
+        };
 
-    PipeContainer {
-        stdin: proc.stdin.unwrap(),
-        stdout: BufReader::with_capacity(1, proc.stdout.unwrap()),
-        stderr: BufReader::with_capacity(1, proc.stderr.unwrap()),
+        PipeContainer {
+            stdin: proc.stdin.unwrap(),
+            stdout: BufReader::with_capacity(1, proc.stdout.unwrap()),
+            stderr: BufReader::with_capacity(1, proc.stderr.unwrap()),
+        }
     }
 }
 

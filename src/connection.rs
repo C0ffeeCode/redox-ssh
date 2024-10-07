@@ -356,6 +356,10 @@ impl Connection {
                 modes: reader.read_string()?,
             })),
             "shell" => Some(ChannelRequest::Shell),
+            "env" => Some(ChannelRequest::Env(
+                String::from_utf8(reader.read_string()?).unwrap(), // TODO: error handling
+                String::from_utf8(reader.read_string()?).unwrap(),
+            )),
             _ => None,
         };
 

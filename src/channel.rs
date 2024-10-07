@@ -26,12 +26,14 @@ pub struct Channel {
     peer_window_size: u32,
     max_packet_size: u32,
     read_thread: Option<JoinHandle<()>>,
+    env: Vec<(String, String)>,
 }
 
 #[derive(Debug)]
 pub enum ChannelRequest {
     Pty(PtyConfig),
     Shell,
+    Env(String, String),
 }
 
 impl Channel {
@@ -52,6 +54,7 @@ impl Channel {
             peer_window_size,
             max_packet_size,
             read_thread: None,
+            env: Vec::new(),
         }
     }
 
@@ -68,11 +71,12 @@ impl Channel {
     }
 
     pub fn handle_request(&mut self, request: ChannelRequest) {
+        debug!("Channel Request: {:?}", request);
         match request {
             ChannelRequest::Pty(ref pty) => self.setup_tty(pty),
             ChannelRequest::Shell => self.setup_shell(),
+            ChannelRequest::Env(key, value) => self.env.push((key, value)),
         }
-        debug!("Channel Request: {:?}", request);
     }
 
     /// Writes `data` **to** this channel;
