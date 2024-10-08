@@ -32,9 +32,15 @@ impl Channel {
     }
 
     fn without_tty(&mut self) -> PipeContainer {
+        let mut args = self.executable.split_ascii_whitespace();
+        let exec = args.next().expect("Failed to get executable from args.");
+
+        info!("Executable {exec}, args: {args:?}");
+
         let proc = unsafe {
-            process::Command::new("/bin/sh")
+            process::Command::new(exec)
                 // .env_clear()
+                .args(args)
                 .envs(self.env.drain(..))
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())

@@ -27,6 +27,7 @@ pub struct Channel {
     max_packet_size: u32,
     read_thread: Option<JoinHandle<()>>,
     env: Vec<(String, String)>,
+    executable: String,
 }
 
 #[derive(Debug)]
@@ -34,6 +35,7 @@ pub enum ChannelRequest {
     Pty(PtyConfig),
     Shell,
     Env(String, String),
+    Exec(String),
 }
 
 impl Channel {
@@ -55,6 +57,7 @@ impl Channel {
             max_packet_size,
             read_thread: None,
             env: Vec::new(),
+            executable: "/bin/sh".to_string(),
         }
     }
 
@@ -76,6 +79,10 @@ impl Channel {
             ChannelRequest::Pty(ref pty) => self.setup_tty(pty),
             ChannelRequest::Shell => self.setup_shell(),
             ChannelRequest::Env(key, value) => self.env.push((key, value)),
+            ChannelRequest::Exec(executable) => {
+                self.executable = executable;
+                self.setup_shell();
+            }
         }
     }
 
@@ -84,10 +91,12 @@ impl Channel {
         if let Some(ref mut master) = self.master {
             master.write_all(data)?;
             master.flush()
-        } else if let Some(PipeContainer { ref mut stdin, .. }) = self.pipes {
+        }
+        else if let Some(PipeContainer { ref mut stdin, .. }) = self.pipes {
             stdin.write_all(data)?;
             stdin.flush()
-        } else {
+        }
+        else {
             Ok(())
         }
     }
@@ -96,7 +105,8 @@ impl Channel {
     pub fn read_pty_master(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         if let Some(ref mut master) = self.master {
             master.read(buf)
-        } else {
+        }
+        else {
             Ok(0)
         }
     }
@@ -106,7 +116,8 @@ impl Channel {
         if let Some(pipes) = &mut self.pipes {
             let res_len = pipes.stdout.read_line(buf);
             res_len
-        } else {
+        }
+        else {
             Ok(0)
         }
     }
@@ -115,7 +126,8 @@ impl Channel {
         if let Some(pipes) = &mut self.pipes {
             let res_len = pipes.stderr.read_line(buf);
             res_len
-        } else {
+        }
+        else {
             Ok(0)
         }
     }

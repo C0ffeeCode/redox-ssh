@@ -360,6 +360,7 @@ impl Connection {
                 String::from_utf8(reader.read_string()?).unwrap(), // TODO: error handling
                 String::from_utf8(reader.read_string()?).unwrap(),
             )),
+            "exec" => Some(ChannelRequest::Exec(String::from_utf8(reader.read_string()?).unwrap())),
             _ => None,
         };
 
