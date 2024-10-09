@@ -1,4 +1,9 @@
-use std::{fs::File, io::{Read, Write}, os::fd::FromRawFd, thread};
+use std::{
+    fs::File,
+    io::{Read, Write},
+    os::fd::FromRawFd,
+    thread,
+};
 
 use crate::sys;
 
@@ -53,7 +58,7 @@ impl Channel {
                     Err(e) => {
                         warn!("Error occured, ignoring: {}", e);
                         1 // TODO
-                    },
+                    }
                 };
 
                 // This is weird.

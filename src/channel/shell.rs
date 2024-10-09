@@ -1,8 +1,12 @@
 use std::{
-    fs::OpenOptions, io::{stdin, BufReader}, os::{
+    fs::OpenOptions,
+    io::{stdin, BufReader},
+    os::{
         fd::{FromRawFd, IntoRawFd, RawFd},
         unix::process::CommandExt,
-    }, path::PathBuf, process::{self, ChildStderr, ChildStdin, ChildStdout, Stdio}
+    },
+    path::PathBuf,
+    process::{self, ChildStderr, ChildStdin, ChildStdout, Stdio},
 };
 
 use crate::sys;
@@ -27,7 +31,7 @@ impl Channel {
                 non_blockify_reader(pipes.stdout.get_ref());
                 non_blockify_reader(pipes.stderr.get_ref());
                 self.pipes = Some(pipes);
-            },
+            }
         }
     }
 
@@ -72,6 +76,8 @@ fn with_tty(tty_path: &PathBuf) {
     }
     .spawn()
     .unwrap();
+
+    // TODO: TTY is broken
 }
 
 fn open_tty(tty_path: &PathBuf, read: bool, write: bool) -> RawFd {

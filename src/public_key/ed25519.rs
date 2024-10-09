@@ -20,7 +20,7 @@ pub static ED25519: CryptoSystem = CryptoSystem {
 struct Ed25519KeyPair {
     // This should be 32 bytes as mandated for [ed25519](https://www.rfc-editor.org/rfc/rfc8032#section-5.1.5)
     private: Option<SigningKey>, //[u8; 64]>,
-    public: VerifyingKey, // [u8; 32],
+    public: VerifyingKey,        // [u8; 32],
 }
 
 impl Ed25519KeyPair {
@@ -39,7 +39,10 @@ impl Ed25519KeyPair {
         use crate::packet::ReadPacketExt;
 
         if r.read_utf8()? != "ssh-ed25519" {
-            return Err(io::Error::new(InvalidData, "Not a ED25519 key (in custom format), invalid header"));
+            return Err(io::Error::new(
+                InvalidData,
+                "Not a ED25519 key (in custom format), invalid header",
+            ));
         }
 
         if r.read_uint32()? != 32 {
@@ -74,8 +77,7 @@ impl Ed25519KeyPair {
 
         let mut public = [0u8; 32];
         r.read_exact(&mut public)?;
-        let public = VerifyingKey::from_bytes(&public)
-            .unwrap(); // TODO
+        let public = VerifyingKey::from_bytes(&public).unwrap(); // TODO
 
         Ok(Box::new(Ed25519KeyPair {
             private: None,
@@ -107,12 +109,17 @@ impl KeyPair for Ed25519KeyPair {
         let received_id = reader.read_string().unwrap_or_default();
 
         if received_id == EXPECTED_ID {
-            if let Ok(sig) = reader.read_string() { // TODO: .read_string() {
-                let sig_array: &[u8; 64] = sig.as_slice().try_into().expect("slice with incorrect length"); // TODO
+            if let Ok(sig) = reader.read_string() {
+                // TODO: .read_string() {
+                let sig_array: &[u8; 64] = sig
+                    .as_slice()
+                    .try_into()
+                    .expect("slice with incorrect length"); // TODO
                 let sig = Signature::from_bytes(sig_array); // TODO
                 let res = self.public.verify_strict(data, &sig);
                 return Ok(res.is_ok());
-                // return Ok(ed25519::verify(data, &self.public, sig.as_slice()));
+                // return Ok(ed25519::verify(data, &self.public,
+                // sig.as_slice()));
             }
         }
         Err(KeyPairIdValidationError {
@@ -130,7 +137,8 @@ impl KeyPair for Ed25519KeyPair {
             result.write_string("ssh-ed25519")?;
             result.write_bytes(&sig.to_bytes())?;
             Ok(result)
-        } else {
+        }
+        else {
             Err(SigningError::NoPrivateKey)
         }
     }

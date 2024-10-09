@@ -114,8 +114,7 @@ impl Channel {
     /// Reads data **from** this channel and writes it **to** the buffer/.
     pub fn read_stdout(&mut self, buf: &mut String) -> io::Result<usize> {
         if let Some(pipes) = &mut self.pipes {
-            let res_len = pipes.stdout.read_line(buf);
-            res_len
+            pipes.stdout.read_line(buf)
         }
         else {
             Ok(0)
@@ -124,8 +123,7 @@ impl Channel {
 
     pub fn read_stderr(&mut self, buf: &mut String) -> io::Result<usize> {
         if let Some(pipes) = &mut self.pipes {
-            let res_len = pipes.stderr.read_line(buf);
-            res_len
+            pipes.stderr.read_line(buf)
         }
         else {
             Ok(0)

@@ -50,14 +50,12 @@ impl KeyExchange for Curve25519 {
     }
 
     fn process(&mut self, conn: &mut Connection, packet: Packet) -> KexResult {
-        match packet.msg_type()
-        {
+        match packet.msg_type() {
             MessageType::KeyExchange(ECDH_KEX_INIT) => {
                 let mut reader = packet.reader();
                 let client_public = reader.read_string().unwrap();
 
-                let config = match &conn.conn_type
-                {
+                let config = match &conn.conn_type {
                     ConnectionType::Server(config) => config.clone(),
                     _ => return KexResult::Error,
                 };
@@ -83,27 +81,38 @@ impl KeyExchange for Curve25519 {
                     secret
                 };
 
-                // let server_public = crypto::curve25519::curve25519_base(&server_secret);
+                // let server_public =
+                // crypto::curve25519::curve25519_base(&server_secret);
                 // let shared_secret = {
                 //     let mut buf = Vec::new();
                 //     buf.write_mpint(BigInt::from_bytes_be(
                 //         Sign::Plus,
-                //         &crypto::curve25519::curve25519(&server_secret, &client_public),
-                //     )).ok();
+                //         &crypto::curve25519::curve25519(&server_secret,
+                // &client_public),     )).ok();
                 //     buf
                 // };
 
                 // -------------------------------------
 
-                let server_secret_scalar = Scalar::from_bytes_mod_order(server_secret);
-                let server_public = MontgomeryPoint::mul_base(&server_secret_scalar);
+                let server_secret_scalar =
+                    Scalar::from_bytes_mod_order(server_secret);
+                let server_public =
+                    MontgomeryPoint::mul_base(&server_secret_scalar);
                 let shared_secret = {
                     let mut buf = Vec::new();
-                    let client_public_array: [u8; 32] = client_public.clone().try_into().unwrap(); // TODO
-                    let client_public_point = MontgomeryPoint(client_public_array);
-                    let server_secret_scalar = Scalar::from_bytes_mod_order(server_secret);
-                    let shared_secret_point = client_public_point * server_secret_scalar;
-                    buf.write_mpint(BigInt::from_bytes_be(Sign::Plus, &shared_secret_point.to_bytes())).ok();
+                    let client_public_array: [u8; 32] =
+                        client_public.clone().try_into().unwrap(); // TODO
+                    let client_public_point =
+                        MontgomeryPoint(client_public_array);
+                    let server_secret_scalar =
+                        Scalar::from_bytes_mod_order(server_secret);
+                    let shared_secret_point =
+                        client_public_point * server_secret_scalar;
+                    buf.write_mpint(BigInt::from_bytes_be(
+                        Sign::Plus,
+                        &shared_secret_point.to_bytes(),
+                    ))
+                    .ok();
                     buf
                 };
 
@@ -113,16 +122,15 @@ impl KeyExchange for Curve25519 {
                     let mut buf = Vec::new();
                     let data = &conn.hash_data;
 
-                    let items =
-                        [
-                            data.client_id.as_ref().unwrap().as_bytes(),
-                            data.server_id.as_ref().unwrap().as_bytes(),
-                            data.client_kexinit.as_ref().unwrap().as_slice(),
-                            data.server_kexinit.as_ref().unwrap().as_slice(),
-                            public_key.as_slice(),
-                            client_public.as_slice(),
-                            &server_public.to_bytes(),
-                        ];
+                    let items = [
+                        data.client_id.as_ref().unwrap().as_bytes(),
+                        data.server_id.as_ref().unwrap().as_bytes(),
+                        data.client_kexinit.as_ref().unwrap().as_slice(),
+                        data.server_kexinit.as_ref().unwrap().as_slice(),
+                        public_key.as_slice(),
+                        client_public.as_slice(),
+                        &server_public.to_bytes(),
+                    ];
 
                     for item in items.iter() {
                         buf.write_bytes(item).ok();

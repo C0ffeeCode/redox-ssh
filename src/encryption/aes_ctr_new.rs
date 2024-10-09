@@ -11,9 +11,11 @@ pub struct AesCtr {
 
 impl AesCtr {
     pub fn new(key: &[u8], iv: &[u8]) -> Self {
-        let key: [u8; 32] = key.try_into().expect("slice with incorrect length");
+        let key: [u8; 32] =
+            key.try_into().expect("slice with incorrect length");
         let key = GenericArray::from_slice(&key);
-        let iv: [u8; 16] = iv[..16].try_into().expect("slice with incorrect length");
+        let iv: [u8; 16] =
+            iv[..16].try_into().expect("slice with incorrect length");
         let iv = GenericArray::from_slice(&iv);
         let cipher = ThisCipher::new(key, iv);
         Self { cipher }

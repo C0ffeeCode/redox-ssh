@@ -18,11 +18,11 @@ impl Packet {
     }
 
     pub fn msg_type(&self) -> MessageType {
-        match self
-        {
+        match self {
             Packet::Raw(data, _) => data[5],
             Packet::Payload(data) => data[0],
-        }.into()
+        }
+        .into()
     }
 
     pub fn read_from<R: io::Read>(stream: &mut R) -> Result<Packet> {
@@ -48,8 +48,7 @@ impl Packet {
     }
 
     pub fn write_to<W: io::Write>(&self, stream: &mut W) -> Result<()> {
-        match self
-        {
+        match self {
             Packet::Raw(data, _) => {
                 stream.write_all(data)?;
                 stream.flush()
@@ -69,24 +68,21 @@ impl Packet {
     }
 
     pub fn payload(self) -> Vec<u8> {
-        match self
-        {
+        match self {
             Packet::Raw(data, payload_len) => data[5..payload_len + 5].to_vec(),
             Packet::Payload(payload) => payload,
         }
     }
 
     pub fn data(&self) -> &[u8] {
-        match self
-        {
+        match self {
             Packet::Raw(data, _) => data,
             Packet::Payload(payload) => payload,
         }
     }
 
     pub fn into_raw(self) -> Result<Packet> {
-        match self
-        {
+        match self {
             Packet::Raw(_, _) => Ok(self),
             Packet::Payload(ref payload) => {
                 let mut buf = Vec::with_capacity(payload.len());
@@ -97,8 +93,7 @@ impl Packet {
     }
 
     pub fn reader(&self) -> BufReader<&[u8]> {
-        match self
-        {
+        match self {
             &Packet::Raw(ref data, payload_len) => {
                 BufReader::new(&data.as_slice()[6..payload_len + 5])
             }
@@ -109,8 +104,7 @@ impl Packet {
     }
 
     pub fn payload_len(&self) -> usize {
-        match self
-        {
+        match self {
             &Packet::Raw(_, payload_len) => payload_len,
             Packet::Payload(payload) => payload.len(),
         }
@@ -134,8 +128,7 @@ impl Packet {
 
 impl Write for Packet {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
-        match *self
-        {
+        match *self {
             Packet::Payload(ref mut payload) => payload.write(buf),
             Packet::Raw(ref mut data, ref mut payload_len) => {
                 let count = data.write(buf)?;
@@ -186,12 +179,10 @@ pub trait ReadPacketExt: ReadBytesExt {
 
     fn read_enum_list<T: FromStr>(&mut self) -> Result<Vec<T>> {
         let string = self.read_utf8()?;
-        Ok(
-            string
-                .split(",")
-                .filter_map(|l| T::from_str(l).ok())
-                .collect(),
-        )
+        Ok(string
+            .split(",")
+            .filter_map(|l| T::from_str(l).ok())
+            .collect())
     }
 
     fn read_name_list(&mut self) -> Result<Vec<String>> {

@@ -11,7 +11,11 @@ pub trait KeyPair: Sync + Send {
 
     fn has_private(&self) -> bool;
 
-    fn verify(&self, data: &[u8], signature: &[u8]) -> Result<bool, KeyPairIdValidationError>;
+    fn verify(
+        &self,
+        data: &[u8],
+        signature: &[u8],
+    ) -> Result<bool, KeyPairIdValidationError>;
     fn sign(&self, data: &[u8]) -> Result<Vec<u8>, SigningError>;
 
     fn write_public(&self, w: &mut dyn Write) -> io::Result<()>;

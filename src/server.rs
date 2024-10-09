@@ -18,7 +18,9 @@ pub struct Server {
 
 impl Server {
     pub fn with_config(config: ServerConfig) -> Server {
-        Server { config: Arc::new(config) }
+        Server {
+            config: Arc::new(config),
+        }
     }
 
     pub fn run(&self) -> io::Result<()> {

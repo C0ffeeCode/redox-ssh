@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, VecDeque};
 use std::io::{self, BufReader, Read, Write};
+use std::os::fd::AsRawFd;
 use std::sync::Arc;
 
 use rand::distributions::Standard;
@@ -62,7 +63,10 @@ impl Connection {
         }
     }
 
-    pub fn run<S: Read + Write + std::os::fd::AsRawFd>(&mut self, stream: &mut S) -> Result<()> {
+    pub fn run<S: Read + Write + AsRawFd>(
+        &mut self,
+        stream: &mut S,
+    ) -> Result<()> {
         self.send_id(stream)?;
         self.read_id(stream)?;
 
@@ -73,7 +77,11 @@ impl Connection {
             std::thread::sleep(std::time::Duration::from_millis(1)); // TODO: REMOVE: debugging
             let response = match self.recv(&mut reader) {
                 Ok(packet) => self.process_packet(packet)?,
-                Err(ConnectionError::Io(ref io_err)) if io_err.kind() == io::ErrorKind::WouldBlock => None,
+                Err(ConnectionError::Io(ref io_err))
+                    if io_err.kind() == io::ErrorKind::WouldBlock =>
+                {
+                    None
+                }
                 Err(err) => return Err(err),
             };
             // let response = self.process_packet(packet)?;
@@ -91,7 +99,11 @@ impl Connection {
             // TODO: Consider pushing to `tx_queue`?
             for (_, channel) in self.channels.iter_mut() {
                 let mut buf = String::with_capacity(1024);
-                if channel.read_pty_master(unsafe { buf.as_mut_vec() }).unwrap_or(0) != 0 {
+                if channel
+                    .read_pty_master(unsafe { buf.as_mut_vec() })
+                    .unwrap_or(0)
+                    != 0
+                {
                     let mut packet = Packet::new(MessageType::ChannelData);
                     packet.write_uint32(channel.id())?;
                     packet.write_string(&buf)?;
@@ -105,7 +117,8 @@ impl Connection {
                     packets.push(packet)
                 }
                 if channel.read_stderr(&mut buf).unwrap_or(0) != 0 {
-                    let mut packet = Packet::new(MessageType::ChannelExtendedData);
+                    let mut packet =
+                        Packet::new(MessageType::ChannelExtendedData);
                     packet.write_uint32(channel.id())?;
                     packet.write_uint32(1)?; // Data Type Code for stderr
                     packet.write_string(&buf)?;
@@ -123,7 +136,8 @@ impl Connection {
         let packet = if let Some((ref mut c2s, _)) = self.encryption {
             let mut decryptor = Decryptor::new(&mut **c2s, &mut stream);
             Packet::read_from(&mut decryptor)
-        } else {
+        }
+        else {
             Packet::read_from(&mut stream)
         }?;
 
@@ -147,8 +161,11 @@ impl Connection {
         Ok(packet)
     }
 
-    fn send(&mut self, mut stream: &mut dyn Write, packet: Packet)
-        -> io::Result<()> {
+    fn send(
+        &mut self,
+        mut stream: &mut dyn Write,
+        packet: Packet,
+    ) -> io::Result<()> {
         debug!("Sending packet {}: {:?}", self.seq.1, packet);
 
         let packet = packet.into_raw()?;
@@ -202,7 +219,8 @@ impl Connection {
             info!("Peer identifies as {:?}", id);
             self.hash_data.client_id = Some(id.to_owned());
             Ok(())
-        } else {
+        }
+        else {
             Err(io::Error::new(io::ErrorKind::InvalidData, "invalid id"))
         }
     }
@@ -212,17 +230,12 @@ impl Connection {
 
         let kex = self.key_exchange.take().ok_or(KeyGeneration)?;
 
-        let key = kex.hash(
-            &[
-                kex.shared_secret().ok_or(KeyGeneration)?,
-                kex.exchange_hash().ok_or(KeyGeneration)?,
-                id,
-                self.session_id
-                    .as_ref()
-                    .ok_or(KeyGeneration)?
-                    .as_slice(),
-            ],
-        );
+        let key = kex.hash(&[
+            kex.shared_secret().ok_or(KeyGeneration)?,
+            kex.exchange_hash().ok_or(KeyGeneration)?,
+            id,
+            self.session_id.as_ref().ok_or(KeyGeneration)?.as_slice(),
+        ]);
 
         self.key_exchange = Some(kex);
 
@@ -256,11 +269,10 @@ impl Connection {
         let mac_c2s = self.generate_key(b"E", 256)?;
         let mac_s2c = self.generate_key(b"F", 256)?;
 
-        self.encryption =
-            Some((
-                Box::new(AesCtr::new(enc_c2s.as_slice(), iv_c2s.as_slice())),
-                Box::new(AesCtr::new(enc_s2c.as_slice(), iv_s2c.as_slice())),
-            ));
+        self.encryption = Some((
+            Box::new(AesCtr::new(enc_c2s.as_slice(), iv_c2s.as_slice())),
+            Box::new(AesCtr::new(enc_s2c.as_slice(), iv_s2c.as_slice())),
+        ));
 
         self.mac = Some((
             Box::new(Hmac::new(mac_c2s.as_slice())),
@@ -295,7 +307,8 @@ impl Connection {
             assert!(!(reader.read_bool()?));
             let pass = reader.read_utf8()?;
             pass == "hunter2"
-        } else {
+        }
+        else {
             false
         };
 
@@ -303,7 +316,8 @@ impl Connection {
 
         if success {
             Ok(Some(Packet::new(MessageType::UserAuthSuccess)))
-        } else {
+        }
+        else {
             let mut res = Packet::new(MessageType::UserAuthFailure);
             res.write_string("password")?;
             res.write_bool(false)?;
@@ -321,7 +335,8 @@ impl Connection {
 
         let id = if let Some((id, chan)) = self.channels.iter().next_back() {
             id + 1
-        } else {
+        }
+        else {
             0
         };
 
@@ -357,17 +372,20 @@ impl Connection {
             })),
             "shell" => Some(ChannelRequest::Shell),
             "env" => Some(ChannelRequest::Env(
-                String::from_utf8(reader.read_string()?).unwrap(), // TODO: error handling
+                String::from_utf8(reader.read_string()?).unwrap(), /* TODO: error handling */
                 String::from_utf8(reader.read_string()?).unwrap(),
             )),
-            "exec" => Some(ChannelRequest::Exec(String::from_utf8(reader.read_string()?).unwrap())),
+            "exec" => Some(ChannelRequest::Exec(
+                String::from_utf8(reader.read_string()?).unwrap(),
+            )),
             _ => None,
         };
 
         if let Some(request) = request {
             let channel = self.channels.get_mut(&channel_id).unwrap();
             channel.handle_request(request);
-        } else {
+        }
+        else {
             warn!("Unkown channel request {}", name);
         }
 
@@ -375,7 +393,8 @@ impl Connection {
             let mut res = Packet::new(MessageType::ChannelSuccess);
             res.write_uint32(0)?;
             Ok(Some(res))
-        } else {
+        }
+        else {
             Ok(None)
         }
     }

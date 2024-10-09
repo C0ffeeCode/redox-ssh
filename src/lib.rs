@@ -9,15 +9,15 @@ extern crate log;
 #[cfg(not(target_os = "redox"))]
 extern crate libc;
 
-mod error;
 mod algorithm;
-mod packet;
-mod message;
-mod connection;
-mod key_exchange;
-mod encryption;
-mod mac;
 mod channel;
+mod connection;
+mod encryption;
+mod error;
+mod key_exchange;
+mod mac;
+mod message;
+mod packet;
 
 pub mod public_key;
 pub mod server;

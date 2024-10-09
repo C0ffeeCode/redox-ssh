@@ -16,15 +16,18 @@ pub enum ConnectionError {
 impl fmt::Display for ConnectionError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use self::ConnectionError::*;
-        write!(f, "connection error: {}", (match &self
-        {
-            Io(err) => format!("io error: {}", err),
-            Protocol => "protocol error".to_owned(),
-            Negotiation => "negotiation error".to_owned(),
-            KeyExchange => "key exchange error".to_owned(),
-            KeyGeneration => "key generation error".to_owned(),
-            Integrity => "integrity error".to_owned(),
-        }))
+        write!(
+            f,
+            "connection error: {}",
+            (match &self {
+                Io(err) => format!("io error: {}", err),
+                Protocol => "protocol error".to_owned(),
+                Negotiation => "negotiation error".to_owned(),
+                KeyExchange => "key exchange error".to_owned(),
+                KeyGeneration => "key generation error".to_owned(),
+                Integrity => "integrity error".to_owned(),
+            })
+        )
     }
 }
 
