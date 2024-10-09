@@ -2,7 +2,7 @@ use std::io::ErrorKind::InvalidData;
 use std::io::{self, Read, Write};
 
 use ed25519_dalek::ed25519::signature::SignerMut;
-use ed25519_dalek::{Signature, SigningKey, VerifyingKey};
+use ed25519_dalek::{SecretKey, Signature, SigningKey, VerifyingKey};
 use rand::rngs::OsRng;
 // use crypto::ed25519;
 
@@ -18,6 +18,7 @@ pub static ED25519: CryptoSystem = CryptoSystem {
 };
 
 struct Ed25519KeyPair {
+    // This should be 32 bytes as mandated for [ed25519](https://www.rfc-editor.org/rfc/rfc8032#section-5.1.5)
     private: Option<SigningKey>, //[u8; 64]>,
     public: VerifyingKey, // [u8; 32],
 }
@@ -38,24 +39,25 @@ impl Ed25519KeyPair {
         use crate::packet::ReadPacketExt;
 
         if r.read_utf8()? != "ssh-ed25519" {
-            return Err(io::Error::new(InvalidData, "not a ED25519 key"));
+            return Err(io::Error::new(InvalidData, "Not a ED25519 key (in custom format), invalid header"));
         }
 
         if r.read_uint32()? != 32 {
-            return Err(io::Error::new(InvalidData, "invalid ED25519 key"));
+            return Err(io::Error::new(InvalidData, "Invalid ED25519 key (in custom format), verifying key length is invalid"));
         }
 
         let mut public = [0u8; 32];
         r.read_exact(&mut public)?;
-        let public = VerifyingKey::from_bytes(&public).unwrap(); // TODO
+        let public = VerifyingKey::from_bytes(&public)
+            .expect("Failed to construct verifying keys from the bytes read"); // TODO
 
-        if r.read_uint32()? != 64 {
-            return Err(io::Error::new(InvalidData, "invalid ED25519 key"));
+        if r.read_uint32()? != 32 {
+            return Err(io::Error::new(InvalidData, "Invalid ED25519 key (in custom format), secret key length is invalid"));
         }
 
-        let mut private = [0u8; 64];
+        let mut private: SecretKey = [0u8; 32];
         r.read_exact(&mut private)?;
-        let private = SigningKey::from_keypair_bytes(&private).unwrap(); // TODO, also wtf
+        let private = SigningKey::from_bytes(&private);
 
         Ok(Box::new(Ed25519KeyPair {
             public,
