@@ -1,5 +1,6 @@
 use std::io::Result;
 use std::os::unix::io::RawFd;
+use std::os::fd::AsRawFd;
 use std::path::PathBuf;
 
 pub fn before_exec() -> Result<()> {
@@ -31,4 +32,10 @@ pub fn getpty() -> (RawFd, PathBuf) {
             String::from_utf8_unchecked(Vec::from(&buf[..count]))
         }),
     )
+}
+
+/// Sets the file descriptor to non-blocking mode.
+/// This uses the **`unsafe`** keyword
+pub fn non_blockify_reader(obj: &impl AsRawFd) {
+    todo!();
 }

@@ -40,6 +40,9 @@ Currently implemented features, ordered by priority:
 - [ ] Authentication and executing as a specific user
   - [ ] Password validation (not hardcoded)
   - [ ] SSH keys
+- Key file formats
+  - [x] Something custom
+  - [ ] OpenSSH keys
 - [ ] Port forwarding
 - [ ] SCP File Transfers
 
